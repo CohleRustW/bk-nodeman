@@ -63,11 +63,11 @@ AUTH_TUPLE = ("PASSWORD", "KEY", "TJJ_PASSWORD")
 AUTH_CHOICES = tuple_choices(AUTH_TUPLE)
 AuthType = choices_to_namedtuple(AUTH_CHOICES)
 
-OS_TUPLE = ("LINUX", "WINDOWS", "AIX")
+OS_TUPLE = ("LINUX", "WINDOWS", "AIX", "SOLARIS")
 OS_CHOICES = tuple_choices(OS_TUPLE)
 OsType = choices_to_namedtuple(OS_CHOICES)
-OS_CHN = {"WINDOWS": "Windows", "LINUX": "Linux", "AIX": "Aix"}
-BK_OS_TYPE = {"LINUX": "1", "WINDOWS": "2", "AIX": "3"}
+OS_CHN = {"WINDOWS": "Windows", "LINUX": "Linux", "AIX": "Aix", "SOLARIS": "Solaris"}
+BK_OS_TYPE = {"LINUX": "1", "WINDOWS": "2", "AIX": "3", "SOLARIS": "5"}
 
 # 操作系统->系统账户映射表
 ACCOUNT_MAP = {
@@ -79,7 +79,7 @@ ACCOUNT_MAP = {
     OsType.AIX.lower: "root",
 }
 
-OS_TYPE = {"1": "LINUX", "2": "WINDOWS", "3": "AIX"}
+OS_TYPE = {"1": "LINUX", "2": "WINDOWS", "3": "AIX", "5": "SOLARIS"}
 
 NODE_TUPLE = ("AGENT", "PROXY", "PAGENT")
 NODE_CHOICES = tuple_choices(NODE_TUPLE)
@@ -402,7 +402,7 @@ PLUGIN_OS_TUPLE = ("windows", "linux", "aix")
 PLUGIN_OS_CHOICES = tuple_choices(PLUGIN_OS_TUPLE)
 PluginOsType = choices_to_namedtuple(PLUGIN_OS_CHOICES)
 
-CPU_TUPLE = ("x86", "x86_64", "powerpc", "aarch64")
+CPU_TUPLE = ("x86", "x86_64", "powerpc", "aarch64", "sparc")
 CPU_CHOICES = tuple_choices(CPU_TUPLE)
 CpuType = choices_to_namedtuple(CPU_CHOICES)
 DEFAULT_OS_CPU_MAP = {
@@ -570,6 +570,7 @@ class SetupScriptFileName(Enum):
     SETUP_AGENT_BAT = "setup_agent.bat"
     SETUP_PAGENT_PY = "setup_pagent.py"
     GSECTL_BAT = "gsectl.bat"
+    SETUP_AGENT_SOLARIS_SH = "setup_solaris_agent.sh"
 
 
 class BkJobStatus(object):

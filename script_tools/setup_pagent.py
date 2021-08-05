@@ -463,6 +463,36 @@ def main() -> None:
                 dest_dir=tmp_dir,
             ),
         ],
+        "solaris": [
+            f"rm -f {tmp_dir}setup_solaris_agent.sh",
+            "curl {}/setup_solaris_agent.sh -o {}setup_solaris_agent.sh -sSf -x {}".format(
+                args.download_url, tmp_dir, "http://{}:{}".format(args.lan_eth_ip, DEFAULT_HTTP_PROXY_SERVER_PORT),
+            ),
+            "nohup bash {dest_dir}setup_solaris_agent.sh -T {dest_dir} -i {} -I {} -s {} -c {} -l {} -r {} -p {} -e {} "
+            "-a {} -k {} -x {} -N PROXY {} -O {} -E {} -A {} -V {} -B {} -S {} -Z {} -K {} 2>&1 &".format(
+                cloud_id,
+                lan_eth_ip,
+                args.task_id,
+                args.token,
+                args.package_url,
+                args.callback_url,
+                args.install_path,
+                args.btfile_server_ip,
+                args.data_server_ip,
+                args.task_server_ip,
+                "http://{}:{}".format(args.lan_eth_ip, DEFAULT_HTTP_PROXY_SERVER_PORT),
+                REMOVE,
+                args.io_port,
+                args.file_svr_port,
+                args.data_port,
+                args.btsvr_thrift_port,
+                args.bt_port,
+                args.bt_port_start,
+                args.bt_port_end,
+                args.tracker_port,
+                dest_dir=tmp_dir,
+            ),
+        ],
         "linux": [
             f"rm -f {tmp_dir}setup_agent.sh",
             "curl {}/setup_agent.sh -o {}setup_agent.sh -sSf -x {}".format(
@@ -528,7 +558,7 @@ def main() -> None:
         ],
     }
 
-    _function = {"aix": rcmd_aix, "linux": rcmd, "windows": windows_cmd}
+    _function = {"aix": rcmd_aix, "linux": rcmd, "windows": windows_cmd, "solaris": rcmd}
 
     # # 当CPU或内存消耗较高时，
     # cpu_percent = psutil.cpu_percent()

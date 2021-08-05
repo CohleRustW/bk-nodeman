@@ -353,6 +353,8 @@ class MetaHandler(APIModel):
         for os_type in constants.OS_TUPLE:
             if os_type == constants.OsType.AIX and settings.BKAPP_RUN_ENV == constants.BkappRunEnvType.CE.value:
                 continue
+            if os_type == const.OsType.SOLARIS:
+                continue
             os_dict["children"].append(
                 {"id": os_type, "name": os_type if os_type == constants.OsType.AIX else os_type.capitalize()}
             )

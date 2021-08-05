@@ -115,6 +115,7 @@ def choose_script_file(host: models.Host) -> str:
         constants.OsType.LINUX: constants.SetupScriptFileName.SETUP_AGENT_SH.value,
         constants.OsType.WINDOWS: constants.SetupScriptFileName.SETUP_AGENT_BAT.value,
         constants.OsType.AIX: constants.SetupScriptFileName.SETUP_AGENT_KSH.value,
+        constants.OsType.SOLARIS: constants.SetupScriptFileName.SETUP_AGENT_SOLARIS_SH.value,
     }
     script_file_name = script_file_name_map[host.os_type]
     return script_file_name
