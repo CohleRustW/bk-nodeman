@@ -51,27 +51,27 @@ modules:
                 command: celery -A apps.backend beat -l info
                 plan: 4C2G5R
                 replicas: 1
-            celery-worker-default:
+            worker-default:
                 command: celery -A apps.backend worker -Q default --autoscale=8,2 --maxtasksperchild=50 -O fair --time-limit=1800
                 plan: 4C2G5R
                 replicas: 5
-            celery-worker-backend:
+            worker-backend:
                 command: celery -A apps.backend worker -Q backend  --autoscale=16,2 --maxtasksperchild=50 -O fair --time-limit=1800
                 plan: 4C2G5R
                 replicas: 5
-            celery-worker-backend-a:
+            worker-backend-a:
                 command: celery -A apps.backend worker -Q backend_additional_task -c 10 -O fair --time-limit=1800 --maxtasksperchild=50
                 plan: 4C2G5R
                 replicas: 5
-            celery-worker-pipeline:
+            worker-pipeline:
                 command: celery -A apps.backend worker -Q pipeline,pipeline_priority -n pipeline_worker@%h --maxtasksperchild=50 --autoscale=16,2 -O fair --time-limit=1800
                 plan: 4C2G5R
                 replicas: 5
-            celery-worker-pipeline-schedule:
+            worker-pipeline-schedule:
                 command: celery -A apps.backend worker -Q service_schedule,service_schedule_priority -n schedule_worker@%h --maxtasksperchild=50 -c 50 -P eventlet -O fair --time-limit=1800
                 plan: 4C2G5R
                 replicas: 5
-            celery-worker-pipeline-a:
+            worker-pipeline-a:
                 command: celery -A apps.backend worker -Q pipeline_additional_task,pipeline_additional_task_priority -n common_worker@%h -l info --autoscale=16,2 --maxtasksperchild=50 -O fair --time-limit=1800
                 plan: 4C2G5R
                 replicas: 5
