@@ -6,7 +6,7 @@
             "data": {
                 "id": "bk-nodeman-test",
                 "name": "节点管理容器部署版",
-                "name_en": "nodeman",
+                "name_en": "nodeman_test",
                 "description": "",
                 "description_en": "",
                 "clients": "bk-nodeman-test,bk_bknodeman",
