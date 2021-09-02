@@ -39,7 +39,7 @@ modules:
               shared_from: default
         env_variables:
             - key: BACKEND_CONFIG
-              value: True
+              value: "True"
               description: 是否启用后台配置，用于同一份代码区分SaaS和后台的差异化配置
 
         processes:
