@@ -23,8 +23,8 @@ export const setupTableConfig: ISetupHead[] = [
           if (!value) return true;
           const regx = new RegExp('^((25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.){3}(25[0-5]|2[0-4]\\d|[01]?\\d\\d?)$');
           const splitCode = splitCodeArr.find(split => value.indexOf(split) > 0);
-          const valueSplit = splitCode ? value.split(splitCode).filter(text => !!text)
-            .map(text => text.trim()) : [value.trim()];
+          const valueSplit = value.split(splitCode).filter(text => !!text)
+            .map(text => text.trim());
           // IP校验
           const ipValidate = valueSplit.some(item => !regx.test(item));
           return !ipValidate;
@@ -61,7 +61,7 @@ export const setupTableConfig: ISetupHead[] = [
         async validator(v: string, id: number) {
           if (!useTjj) return true;
           // 铁将军校验
-          const splitCode = splitCodeArr.find(split => v.indexOf(split) > 0) || '';
+          const splitCode = splitCodeArr.find(split => v.indexOf(split) > 0);
           const valueSplit = v.split(splitCode).filter(text => !!text)
             .map(text => text.trim());
           const data = await this.fetchPwd({
@@ -203,16 +203,16 @@ export const setupTableConfig: ISetupHead[] = [
     width: 115,
   },
   {
-    label: '传输限速',
+    label: '传输限速Unit',
     prop: 'bt_speed_limit',
     type: 'text',
     batch: true,
     required: false,
     show: true,
     noRequiredMark: false,
-    appendSlot: 'MB/s',
+    // appendSlot: 'MB/s',
     iconOffset: 40,
-    width: 160,
+    width: 180,
     rules: [
       {
         regx: '^[1-9]\\d*$',
@@ -224,7 +224,7 @@ export const setupTableConfig: ISetupHead[] = [
     label: '',
     prop: '',
     type: 'operate',
-    width: 60,
+    width: 70,
   },
 ];
 
@@ -285,7 +285,7 @@ export const setupTableManualConfig = [
         async validator(v: string, id: number) {
           if (!useTjj) return true;
           // 铁将军校验
-          const splitCode = splitCodeArr.find(split => v.indexOf(split) > 0) || '';
+          const splitCode = splitCodeArr.find(split => v.indexOf(split) > 0);
           const valueSplit = v.trim().split(splitCode)
             .filter(text => !!text);
           const data = await this.fetchPwd({
@@ -365,16 +365,16 @@ export const setupTableManualConfig = [
     width: 115,
   },
   {
-    label: '传输限速',
+    label: '传输限速Unit',
     prop: 'bt_speed_limit',
     type: 'text',
     batch: true,
     required: false,
     show: true,
     noRequiredMark: false,
-    appendSlot: 'MB/s',
+    // appendSlot: 'MB/s',
     iconOffset: 40,
-    width: 160,
+    width: 180,
     rules: [
       {
         regx: '^[1-9]\\d*$',
@@ -386,6 +386,6 @@ export const setupTableManualConfig = [
     label: '',
     prop: '',
     type: 'operate',
-    width: 60,
+    width: 70,
   },
 ];
