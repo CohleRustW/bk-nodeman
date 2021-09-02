@@ -5,7 +5,7 @@
             "operation": "upsert_system",
             "data": {
                 "id": "bk-nodeman-test",
-                "name": "节点管理",
+                "name": "节点管理容器部署版",
                 "name_en": "nodeman",
                 "description": "",
                 "description_en": "",
