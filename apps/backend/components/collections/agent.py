@@ -1313,24 +1313,17 @@ class GetAgentStatusService(AgentBaseService):
             Service.InputItem(name="expect_status", key="expect_status", type="str", required=True),
         ]
 
-    def schedule(self, data, common_data: AgentCommonData, parent_data):
-        host_ids = data.get_one_of_inputs("unexpected_status_agents")
-        unexpected_status_agents = self.get_agent_statues(host_ids, self.expect_status, batch_size=self.batch_size)
-        inst_ids = [self.host_id_to_inst_id_map[host_id] for host_id in unexpected_status_agents]
-        if self.interval.count > 60:
-            self.move_insts_to_failed(sub_inst_ids=inst_ids, log_content=_("查询GSE状态超时"))
-            return
-
     def _execute(self, data, parent_data, common_data: AgentCommonData, callback_data=None):
-        expect_status = data.get_one_of_inputs("expect_status")
+        self.expect_status = data.get_one_of_inputs("expect_status")
         host_id_to_inst_id_map = common_data.host_id_to_instance_id_map
         host_id_obj_map = common_data.host_id_obj_map
-        batch_size = models.GlobalSettings.get_config("BATCH_SIZE", default=100)
+        self.batch_size = models.GlobalSettings.get_config("BATCH_SIZE", default=100)
 
         create_proc_status_host_id_list: List[Dict[str, Any]] = []
         delete_proc_status_id_list: List[Dict[str, Any]] = []
-        general_proc_status_host_id_list = List[Dict[str, Any]] = []
         host_info_map = Dict[int, Any] = defaultdict(Dict)
+        proc_statistics_map = Dict[str, Dict[str, Any]] = {}
+        to_be_created_process_status = List[int] = []
 
         host_ids = [host_id for host_id in host_id_obj_map.keys()]
         for agent_status in self.host_id_obj_map:
@@ -1344,7 +1337,6 @@ class GetAgentStatusService(AgentBaseService):
             name=ProcessStatus.GSE_AGENT_PROCESS_NAME,
             source_type=ProcessStatus.SourceType.DEFAULT,
         )
-        proc_statistics_map = {}  # {host_id: {"count": 1, proc_ids: [1]}}
         for proc_status in status_queryset:
             count = proc_statistics_map[proc_status.bk_host_id]["count"] or 0
             proc_statistics_map[proc_status.bk_host_id]["count"] = count + 1
@@ -1354,11 +1346,8 @@ class GetAgentStatusService(AgentBaseService):
                 delete_proc_status_id_list.append(statistics["proc_ids"][1:])
             elif statistics["count"] == 0:
                 create_proc_status_host_id_list.append(host_id)
-            else:
-                general_proc_status_host_id_list.append(host_id)
 
         # 创建不存在的进程记录
-        to_be_created_process_status = []
         if create_proc_status_host_id_list:
             for host_id in create_proc_status_host_id_list:
                 to_be_created_process_status.append(
@@ -1375,14 +1364,20 @@ class GetAgentStatusService(AgentBaseService):
             status_queryset.filter(id__in=delete_proc_status_id_list).delete()
 
         unexpected_status_agents = self.get_agent_statues(
-            host_ids, expect_status, batch_size=batch_size, host_id_to_inst_id_map=host_id_to_inst_id_map
+            host_ids,
+            expect_status=self.expect_status,
+            batch_size=self.batch_size,
+            host_id_to_inst_id_map=host_id_to_inst_id_map,
         )
         data.set_outputs("unexpected_status_agents", unexpected_status_agents)
 
     def get_agent_statues(
         self, host_ids: List[int], expect_status: Any, batch_size: int, host_id_to_inst_id_map: Dict[int, int]
     ):
+        unexpected_status_agents = List[int] = []
         host_key_map = defaultdict()
+        update_proc_list = defaultdict(lambda: list)
+        update_host_list = defaultdict(lambda: list)
         inst_ids = [host_id_to_inst_id_map[host_id] for host_id in host_ids]
         except_status_agents = defaultdict(lambda: defaultdict(list))
         agent_host = [
@@ -1400,9 +1395,6 @@ class GetAgentStatusService(AgentBaseService):
         except Exception as error:
             self.log_error(sub_inst_ids=inst_ids, log_content=f"get agent status error, {error}")
             return
-        update_proc_list = defaultdict(lambda: list)
-        update_host_list = defaultdict(lambda: list)
-        unexpected_status_agents = []
         for key, agent_status in agent_status_data.items():
             # 先处理预期状态的agent
             status = constants.PROC_STATUS_DICT[agent_status["bk_agent_alive"]]
