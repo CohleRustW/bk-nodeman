@@ -1313,67 +1313,147 @@ class GetAgentStatusService(AgentBaseService):
             Service.InputItem(name="expect_status", key="expect_status", type="str", required=True),
         ]
 
-    def _execute(self, data, parent_data):
-        expect_status = data.get_one_of_inputs("expect_status")
-        self.logger.info(_("期望的GSE主机状态为{expect_status}").format(expect_status=expect_status))
-        return True
+    def schedule(self, data, common_data: AgentCommonData, parent_data):
+        host_ids = data.get_one_of_inputs("unexpected_status_agents")
+        unexpected_status_agents = self.get_agent_statues(host_ids, self.expect_status, batch_size=self.batch_size)
+        inst_ids = [self.host_id_to_inst_id_map[host_id] for host_id in unexpected_status_agents]
+        if self.interval.count > 60:
+            self.move_insts_to_failed(sub_inst_ids=inst_ids, log_content=_("查询GSE状态超时"))
+            return
 
-    def schedule(self, data, parent_data, callback_data=None):
+    def _execute(self, data, parent_data, common_data: AgentCommonData, callback_data=None):
         expect_status = data.get_one_of_inputs("expect_status")
-        bk_host_id = data.get_one_of_inputs("bk_host_id")
-        host_info = data.get_one_of_inputs("host_info")
-        host = Host.get_by_host_info({"bk_host_id": bk_host_id} if bk_host_id else host_info)
+        host_id_to_inst_id_map = common_data.host_id_to_instance_id_map
+        host_id_obj_map = common_data.host_id_obj_map
+        batch_size = models.GlobalSettings.get_config("BATCH_SIZE", default=100)
+
+        create_proc_status_host_id_list: List[Dict[str, Any]] = []
+        delete_proc_status_id_list: List[Dict[str, Any]] = []
+        general_proc_status_host_id_list = List[Dict[str, Any]] = []
+        host_info_map = Dict[int, Any] = defaultdict(Dict)
+
+        host_ids = [host_id for host_id in host_id_obj_map.keys()]
+        for agent_status in self.host_id_obj_map:
+            host_info_map[agent_status.host_id] = {
+                "bk_cloud_id": host_info_map[agent_status.bk_cloud_id],
+                "inner_ip": host_info_map[agent_status.inner_ip],
+            }
+
         status_queryset = ProcessStatus.objects.filter(
-            bk_host_id=host.bk_host_id,
+            bk_host_id__in=host_ids,
             name=ProcessStatus.GSE_AGENT_PROCESS_NAME,
             source_type=ProcessStatus.SourceType.DEFAULT,
         )
-        if not status_queryset:
-            # 需要创建process status
-            status = ProcessStatus.objects.create(
-                bk_host_id=host.bk_host_id,
-                name=ProcessStatus.GSE_AGENT_PROCESS_NAME,
-                source_type=ProcessStatus.SourceType.DEFAULT,
-            )
-        elif status_queryset.count() > 1:
-            # 需要清理掉重复记录
-            status = status_queryset.first()
-            status_queryset.exclude(id=status.id).delete()
-        else:
-            status = status_queryset.first()
+        proc_statistics_map = {}  # {host_id: {"count": 1, proc_ids: [1]}}
+        for proc_status in status_queryset:
+            count = proc_statistics_map[proc_status.bk_host_id]["count"] or 0
+            proc_statistics_map[proc_status.bk_host_id]["count"] = count + 1
+            proc_statistics_map[proc_status.bk_host_id]["proc_ids"].append(proc_status.id)
+        for host_id, statistics in proc_statistics_map.items():
+            if statistics["count"] > 1:
+                delete_proc_status_id_list.append(statistics["proc_ids"][1:])
+            elif statistics["count"] == 0:
+                create_proc_status_host_id_list.append(host_id)
+            else:
+                general_proc_status_host_id_list.append(host_id)
 
-        bk_inner_ip = host.inner_ip
-        bk_cloud_id = host.bk_cloud_id
-        params = {"hosts": [{"ip": bk_inner_ip, "bk_cloud_id": bk_cloud_id}]}
-        host_key = f"{bk_cloud_id}:{bk_inner_ip}"
-        try:
-            agent_status = client_v2.gse.get_agent_status(params)[host_key]
-            agent_info = client_v2.gse.get_agent_info(params)[host_key]
-        except Exception as error:
-            self.logger.error(f"get agent status error, {error}")
-            return
+        # 创建不存在的进程记录
+        to_be_created_process_status = []
+        if create_proc_status_host_id_list:
+            for host_id in create_proc_status_host_id_list:
+                to_be_created_process_status.append(
+                    ProcessStatus(
+                        bk_host_id=host_id,
+                        name=ProcessStatus.GSE_AGENT_PROCESS_NAME,
+                        source_type=ProcessStatus.SourceType.DEFAULT,
+                    )
+                )
+            models.ProcessStatus.objects.bulk_create(to_be_created_process_status, batch_size=self.batch_size)
 
-        status.status = constants.PROC_STATUS_DICT[agent_status["bk_agent_alive"]]
-        status.version = agent_info["version"] if status.status == constants.PROC_STATUS_DICT[1] else ""
-        status.save(update_fields=["status", "version"])
-        self.logger.info(
-            _("查询GSE主机({host_key})状态为{status}, 版本为{version}").format(
-                host_key=host_key, status=status.status, version=status.version
-            )
+        # 删掉多余进程记录
+        if delete_proc_status_id_list:
+            status_queryset.filter(id__in=delete_proc_status_id_list).delete()
+
+        unexpected_status_agents = self.get_agent_statues(
+            host_ids, expect_status, batch_size=batch_size, host_id_to_inst_id_map=host_id_to_inst_id_map
         )
+        data.set_outputs("unexpected_status_agents", unexpected_status_agents)
 
-        if status.status == expect_status:
-            self.finish_schedule()
-            # 更新主机来源
-            if host.node_from == constants.NodeFrom.CMDB:
-                host.node_from = constants.NodeFrom.NODE_MAN
-                host.save(update_fields=["node_from"])
-            return True
+    def get_agent_statues(
+        self, host_ids: List[int], expect_status: Any, batch_size: int, host_id_to_inst_id_map: Dict[int, int]
+    ):
+        host_key_map = defaultdict()
+        inst_ids = [host_id_to_inst_id_map[host_id] for host_id in host_ids]
+        except_status_agents = defaultdict(lambda: defaultdict(list))
+        agent_host = [
+            {"ip": self.host_id_obj_map[host_id], "bk_cloud_id": self.host_id_obj_map[host_id].bk_host_id}
+            for host_id in host_ids
+        ]
 
-        if self.interval.count > 60:
-            self.logger.error(_("查询GSE状态超时"))
-            self.finish_schedule()
-            return False
+        for host_id in host_ids:
+            key = "{}:{}".format(self.host_id_obj_map[host_id].bk_host_id, self.host_id_obj_map[host_id].ip)
+            host_key_map[key] = host_id
+
+        try:
+            agent_status_data = client_v2.gse.get_agent_status({"hosts": agent_host})
+            agent_info_data = client_v2.get_agent_info({"hosts": agent_host})
+        except Exception as error:
+            self.log_error(sub_inst_ids=inst_ids, log_content=f"get agent status error, {error}")
+            return
+        update_proc_list = defaultdict(lambda: list)
+        update_host_list = defaultdict(lambda: list)
+        unexpected_status_agents = []
+        for key, agent_status in agent_status_data.items():
+            # 先处理预期状态的agent
+            status = constants.PROC_STATUS_DICT[agent_status["bk_agent_alive"]]
+            if status == expect_status:
+                version = agent_info_data[key]["version"]
+                except_status_agents[version] = {
+                    "host_ids": except_status_agents[version]["ids"] + [host_id],
+                    "version": version,
+                    "status": status,
+                    "inst_ids": agent_status["inst_ids"] + host_id_to_inst_id_map["host_id"],
+                }
+
+                update_proc_list[version] = update_proc_list[version] + ProcessStatus(
+                    bk_host_id=host_id,
+                    name=ProcessStatus.GSE_AGENT_PROCESS_NAME,
+                    source_type=ProcessStatus.SourceType.DEFAULT,
+                    version=agent_info_data[key]["version"],
+                    status=agent_status["bk_agent_alive"],
+                )
+
+                update_host_list[version] = update_host_list[version] + Host(
+                    bk_host_id=host_id,
+                    node_from=constants.NodeFrom.NODE_MAN,
+                )
+                for version, msg in except_status_agents.items():
+                    # 以版本号为纬度更新表并且打印日志
+                    ProcessStatus.objects.bulk_update(
+                        update_proc_list[version],
+                        ["version", "status"],
+                        batch_size=batch_size,
+                    )
+
+                    Host.objects.bulk_update(
+                        update_host_list[version],
+                        ["node_from"],
+                        batch_size=batch_size,
+                    )
+
+                    self.log_info(
+                        sub_inst_ids=msg["inst_ids"],
+                        log_content=_("查询GSE主机({bk_cloud_id}:{inner_ip})状态为{status}, 版本为{version}").format(
+                            bk_cloud_id=msg.bk_cloud_id,
+                            inner_ip=self.host_id_obj_map[host_id].inner_ip,
+                            status=status,
+                            version=version,
+                        ),
+                    )
+            else:
+                unexpected_status_agents.append(host_key_map[key])
+
+        return unexpected_status_agents
 
 
 class UpdateProcessStatusService(AgentBaseService):
