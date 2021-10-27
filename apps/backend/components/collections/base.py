@@ -150,6 +150,7 @@ class CommonData:
         subscription: models.Subscription,
         subscription_instances: List[models.SubscriptionInstanceRecord],
         subscription_instance_ids: Set[int],
+        host_id_to_inst_id_map: Dict[int, int],
     ):
         self.bk_host_ids = bk_host_ids
         self.host_id_obj_map = host_id_obj_map
@@ -157,6 +158,7 @@ class CommonData:
         self.subscription = subscription
         self.subscription_instances = subscription_instances
         self.subscription_instance_ids = subscription_instance_ids
+        self.host_id_to_inst_id_map = host_id_to_inst_id_map
 
 
 class BaseService(Service, LogMixin):
@@ -240,9 +242,12 @@ class BaseService(Service, LogMixin):
         )
         bk_host_ids = set()
         subscription_instance_ids = set()
+        host_id_to_inst_id_map = Dict[int, int]
         for subscription_instance in subscription_instances:
-            bk_host_ids.add(subscription_instance.instance_info["host"]["bk_host_id"])
+            bk_host_id = subscription_instance.instance_info["host"]["bk_host_id"]
+            bk_host_ids.add(bk_host_id)
             subscription_instance_ids.add(subscription_instance.id)
+            host_id_to_inst_id_map[bk_host_id] = subscription_instance.id
 
         host_id_obj_map: Dict[int, models.Host] = models.Host.host_id_obj_map(bk_host_id__in=bk_host_ids)
         ap_id_obj_map = models.AccessPoint.ap_id_obj_map()
@@ -254,6 +259,7 @@ class BaseService(Service, LogMixin):
             subscription=subscription,
             subscription_instances=subscription_instances,
             subscription_instance_ids=subscription_instance_ids,
+            host_id_to_inst_id_map=host_id_to_inst_id_map,
         )
 
     def set_current_id(self, subscription_instance_ids: List[int]):
