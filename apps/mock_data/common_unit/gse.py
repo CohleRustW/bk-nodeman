@@ -8,6 +8,25 @@ Unless required by applicable law or agreed to in writing, software distributed 
 an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
 specific language governing permissions and limitations under the License.
 """
-from . import cmdb, gse
 
-__all__ = ["cmdb", "gse"]
+from apps.node_man import constants
+
+alive_ips = ["127.0.0.1", "127.0.0.2"]
+abnormal_ips = ["127.0.0.3", "127.0.0.4"]
+MULTI_GET_AGENT_ALIVE_STATUS = [
+    {f"0:{inner_ip}": {"ip": {inner_ip}, "bk_cloud_id": 0, "bk_agent_alive": constants.BkAgentStatus.ALIVE}}
+    for inner_ip in alive_ips
+]
+
+MULTI_GET_AGENT_ALIVE_INFO = [
+    {
+        f"0:{inner_ip}": {
+            "ip": {inner_ip},
+            "version": "V0.01R060D38",
+            "bk_cloud_id": 0,
+            "parent_ip": {inner_ip},
+            "parent_port": 50000,
+        }
+        for inner_ip in alive_ips
+    }
+]

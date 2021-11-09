@@ -1315,7 +1315,7 @@ class GetAgentStatusService(AgentBaseService):
 
     def _execute(self, data, parent_data, common_data: AgentCommonData, callback_data=None):
         self.expect_status = data.get_one_of_inputs("expect_status")
-        host_id_to_inst_id_map = common_data.host_id_to_instance_id_map
+        self.host_id_to_inst_id_map = common_data.host_id_to_instance_id_map
         host_id_obj_map = common_data.host_id_obj_map
         self.batch_size = models.GlobalSettings.get_config("BATCH_SIZE", default=100)
 
@@ -1367,7 +1367,23 @@ class GetAgentStatusService(AgentBaseService):
             host_ids,
             expect_status=self.expect_status,
             batch_size=self.batch_size,
-            host_id_to_inst_id_map=host_id_to_inst_id_map,
+            host_id_to_inst_id_map=self.host_id_to_inst_id_map,
+        )
+        if not unexpected_status_agents:
+            return True
+        data.set_outputs("unexpected_status_agents", unexpected_status_agents)
+
+    def schedule(self, data, parent_data, callback_data=None):
+        schedule_agent_ids = data.get_one_of_inputs("unexpected_status_agents")
+        inst_ids = [self.host_id_to_inst_id_map[host_id] for host_id in schedule_agent_ids]
+        if self.interval.count > 60:
+            self.log_error(sub_inst_ids=inst_ids, log_content="查询GSE主机状态超时")
+            self.finish_schedule()
+        unexpected_status_agents = self.get_agent_statues(
+            schedule_agent_ids,
+            expect_status=self.expect_status,
+            batch_size=self.batch_size,
+            host_id_to_inst_id_map=self.host_id_to_inst_id_map,
         )
         data.set_outputs("unexpected_status_agents", unexpected_status_agents)
 
@@ -1378,8 +1394,9 @@ class GetAgentStatusService(AgentBaseService):
         host_key_map = defaultdict()
         update_proc_list = defaultdict(lambda: list)
         update_host_list = defaultdict(lambda: list)
+        except_status_agents: Dict[str, Dict[str, Any]] = defaultdict(lambda: defaultdict(list))
+
         inst_ids = [host_id_to_inst_id_map[host_id] for host_id in host_ids]
-        except_status_agents = defaultdict(lambda: defaultdict(list))
         agent_host = [
             {"ip": self.host_id_obj_map[host_id], "bk_cloud_id": self.host_id_obj_map[host_id].bk_host_id}
             for host_id in host_ids
