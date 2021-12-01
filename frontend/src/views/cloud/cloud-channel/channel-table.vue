@@ -53,8 +53,7 @@ export default class ChannelTable extends Vue {
     }));
   }
   private get showAdvancedConfig() {
-    const { channel_proxy_address: address, agent_download_proxy: agentDownloadProxy } = this.channel.upstream_servers;
-    return agentDownloadProxy && address;
+    return !!this.channel.upstream_servers.channel_proxy_address;
   }
 }
 </script>
