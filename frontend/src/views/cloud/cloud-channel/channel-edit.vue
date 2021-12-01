@@ -160,8 +160,8 @@ export default class ChannelEdit extends Vue {
         params.upstream_servers[key] = this.channelForm[key].map((item: { value: string }) => item.value);
       });
       if (channelProxyAddress) {
-        params.channel_proxy_address = channelProxyAddress;
-        params.agent_download_proxy = false;
+        params.upstream_servers.channel_proxy_address = channelProxyAddress;
+        params.upstream_servers.agent_download_proxy = false;
       }
       this.btnLoading = true;
       let res;

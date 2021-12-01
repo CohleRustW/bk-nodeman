@@ -28,7 +28,7 @@
               content: $t('通道上游节点tips'),
             }">{{ $t("通道上游节点") }}</span>
           </td>
-          <td class="title-td">{{ channel.channel_proxy_address | filterEmpty }}</td>
+          <td class="title-td">{{ channel.upstream_servers.channel_proxy_address | filterEmpty }}</td>
         </tr>
       </template>
     </tbody>
@@ -53,7 +53,8 @@ export default class ChannelTable extends Vue {
     }));
   }
   private get showAdvancedConfig() {
-    return !!this.channel.channel_proxy_address;
+    const { channel_proxy_address: address, agent_download_proxy: agentDownloadProxy } = this.channel.upstream_servers;
+    return agentDownloadProxy && address;
   }
 }
 </script>
