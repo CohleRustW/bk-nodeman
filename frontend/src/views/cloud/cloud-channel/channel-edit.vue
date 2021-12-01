@@ -202,6 +202,7 @@ export default class ChannelEdit extends Vue {
               ? upstream[server].map((ip: string) => ({ value: ip }))
               : [{ value: '' }];
           });
+          formData.channel_proxy_address = upstream.channel_proxy_address || '';
         } else if (key === 'jump_servers') {
           const [jumpServers] = channel[key];
           formData[key] = jumpServers;
