@@ -311,7 +311,7 @@ def gen_commands(
         host_shell = format_run_cmd_by_os_type(host.os_type, host_tmp_path)
         run_cmd_params.extend(
             [
-                f"-HLIP {host.login_ip or host.inner_ip or host.inner_ipv6}",
+                f"-HLIP {host.login_ip or host.inner_ip or ''}",
                 f"-HIIP {host.inner_ip}",
                 f"-HIIP6 {host.inner_ipv6}" if host.inner_ipv6 else "",
                 f"-HA {identity_data.account}",
@@ -326,7 +326,7 @@ def gen_commands(
                 f"-HS '{host_shell}'",
                 f"-p '{install_path}'",
                 f"-I {jump_server.inner_ip}",
-                f"-I6 {jump_server.inner_ipv6}" if jump_server.inner_ipv6 else "",
+                f"JI6 {jump_server.inner_ipv6}" if jump_server.inner_ipv6 else "",
                 f"-AI {host.bk_agent_id}" if host.bk_agent_id else "",
                 f"-o {gen_nginx_download_url(jump_server.inner_ip)}",
                 f"-HEP '{encrypted_password}'" if need_encrypted_password else "",

@@ -411,6 +411,8 @@ remove_proxy () {
     log remove_proxy - "trying to remove proxy if exists"
     stop_proxy
 
+    unregister_agent_id
+
     log remove_proxy - "trying to remove old proxy directory(${AGENT_SETUP_PATH})"
     rm -rf "${AGENT_SETUP_PATH}"
 
@@ -497,6 +499,8 @@ setup_proxy () {
     start_proxy
 
     log setup_proxy DONE "gse proxy setup successfully"
+
+    register_agent_id
 }
 
 setup_py36 () {
@@ -676,6 +680,46 @@ backup_for_upgrade () {
         [ -d plugins/etc ] && cp -vrf plugins/etc "etc.plugins.${TASK_ID}.$T"
     fi
 }
+
+register_agent_id () {
+    if [ ! -f "$AGENT_SETUP_PATH/bin/gse_agent" ]; then
+        fail register_agent_id FAILED "gse_agent file not exists in $AGENT_SETUP_PATH/bin"
+    fi
+
+    log register_agent_id  "register agent id: $agent_id"
+    if [ ! -z "$GSE_AGENT_ID" ]; then
+        if return_agent_id=$($AGENT_SETUP_PATH/bin/gse_agent --register "$agent_id") == "$agent_id"; then
+            log report_register_agent_id DONE "$return_agent_id"
+        else
+            fail register_agent_id FAILED "register agent id failed, return_id: $return_agent_id, excepted: $agent_id"
+        fi
+    else
+        if return_agent_id=$($AGENT_SETUP_PATH/bin/gse_agent --register); then
+            log report_register_agent_id DONE "$return_agent_id"
+        else
+            fail register_agent_id FAILED "register agent id failed"
+        fi
+    fi
+}
+
+unregister_agent_id () {
+    if [ -f "$AGENT_SETUP_PATH/bin/gse_agent" ]; then
+        if [ -z "$GSE_AGENT_ID" ]; then
+            if $AGENT_SETUP_PATH/bin/gse_agent --unregister; then
+                log unregister_agent_id SUCCESS "unregister agent id succeed"
+            else
+                fail unregister_agent_id FAILED "unregister agent id failed"
+        else
+            if $AGENT_SETUP_PATH/bin/gse_agent --unregister "${GSE_AGENT_ID}"; then
+                log unregister_agent_id SUCCESS "unregister agent id succeed"
+            else
+                fail unregister_agent_id FAILED "unregister agent id failed"
+        fi
+    else
+        log unregister_agent_id FAILED "gse_agent file not exists in $AGENT_SETUP_PATH/bin"
+    fi
+}
+
 
 _help () {
 

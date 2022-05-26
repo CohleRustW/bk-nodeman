@@ -37,6 +37,8 @@ if "%1" EQU "-Z" (set BT_PORT_END=%~2) && shift && shift && goto CheckOpts
 if "%1" EQU "-K" (set TRACKER_PORT=%~2) && shift && shift && goto CheckOpts
 if "%1" EQU "-U" (set INSTALL_USER=%~2) && shift && shift && goto CheckOpts
 if "%1" EQU "-P" (set INSTALL_PASSWORD=%~2) && shift && shift && goto CheckOpts
+if "%1" EQU "-AI" (set AGENT_ID=%~2) && shift && shift && goto CheckOpts
+if "%1" EQU "-I6" (set LAN_ETH_IPV6=%~2) && shift && shift && goto CheckOpts
 if "%1" NEQ "" echo Invalid option: "%1" && goto :EOF && exit /B 1
 
 if not defined UPSTREAM_TYPE (set UPSTREAM_TYPE=SERVER) else (set UPSTREAM_TYPE=%UPSTREAM_TYPE%)
@@ -73,7 +75,7 @@ if exist %tmp_check_deploy_result_files% (DEL /F /S /Q %tmp_check_deploy_result_
 
 set /a nsttret=0
 rem for %%p in (check_env,download_pkg,remove_crontab,remove_agent_tmp,setup_agent,start_basic_gse_plugin,setup_startup_scripts,setup_crontab,check_deploy_result) do (
-for %%p in (check_env,download_pkg,remove_crontab,remove_agent_tmp,setup_agent,start_basic_gse_plugin,setup_startup_scripts,check_deploy_result) do (
+for %%p in (check_env,download_pkg,remove_crontab,unregister_agent_id,remove_agent_tmp,setup_agent,register_agent_id,start_basic_gse_plugin,setup_startup_scripts,check_deploy_result) do (
     call :%%p
     call :multi_report_step_status
 )
@@ -369,6 +371,36 @@ goto :EOF
     )
 goto :EOF
 
+:unregister_agent_id
+    if exist %AGENT_SETUP_PATH%\bin\gse_agent.exe (
+        if %GSE_AGENT_ID% equ "" (
+            for /F %%i in ('%AGENT_SETUP_PATH%\agent\bin\gse_agent.exe --unregister %GSE_AGENT_ID%') do (set %GSE_AGENT_ID%% = %%i)
+        )else (
+            cd /d %AGENT_SETUP_PATH%\agent\bin && .\gse_agnet.exe --unregister  %GSE_AGENT_ID%
+            call: print INFO unregister_agent_id - "unregister agent id success"
+        )
+    ) else (
+        call :print FAIL unregister_agent_id FAILED "%AGENT_SETUP_PATH%\bin\gse_agnet.exe not exist"
+        call :multi_report_step_status
+    )
+
+goto :EOF
+
+:register_agent_id
+    if exist %AGENT_SETUP_PATH%\bin\gse_agent.exe (
+        if %GSE_AGENT_ID% equ "" (
+            for /F %%i in ('%AGENT_SETUP_PATH%\agent\bin\gse_agent.exe --unregister') do (set %REPORT_GSE_AGENT_ID%% = %%i)
+            call:print INFO report_register_agent_id DONE %REPORT_GSE_AGENT_ID%
+        )else (
+            for /F %%i in ('%AGENT_SETUP_PATH%\agent\bin\gse_agent.exe --unregister %GSE_AGENT_ID%') do (set %REPORT_GSE_AGENT_ID%% = %%i)
+            call:print INFO report_register_agent_id DONE %REPORT_GSE_AGENT_ID%
+        )
+    ) else (
+        call :print FAIL register_agent_id FAILED "%AGENT_SETUP_PATH%\bin\gse_agnet.exe not exist"
+        call :multi_report_step_status
+    )
+goto :EOF
+
 :remove_agent_tmp
     call :print INFO remove_agent START "trying to remove old agent"
     call :multi_report_step_status
@@ -617,7 +649,7 @@ goto :EOF
 :check_env
     cd /d %TMP_DIR%
 
-    call :print INFO check_env - "Args are: -s %TASK_ID% -r %CALLBACK_URL% -l %DOWNLOAD_URL% -c %NEW_TOKEN% -n %UPSTREAM_IP% -i %CLOUD_ID% -I %LAN_ETH_IP% -N %UPSTREAM_TYPE% -p %AGENT_SETUP_PATH% -T %TMP_DIR%  %AGENT_SETUP_PATH% "
+    call :print INFO check_env - "Args are: -s %TASK_ID% -r %CALLBACK_URL% -l %DOWNLOAD_URL% -c %NEW_TOKEN% -n %UPSTREAM_IP% -i %CLOUD_ID% -I %LAN_ETH_IP% -N %UPSTREAM_TYPE% -p %AGENT_SETUP_PATH% -T %TMP_DIR%  %AGENT_SETUP_PATH% -AI %AGENT_ID% -I6 %LAN_ETH_IPV6%"
     call :multi_report_step_status
 
     call :download_exe
@@ -802,6 +834,9 @@ goto :EOF
         call :stop_agent
         echo=
     )
+
+    call: print INFO unregister_agent_id START "trying to unregister agent id"
+    call: unregister_agent_id
 
     if exist %AGENT_SETUP_PATH% (
         wmic process where "name='gse_agent_daemon.exe' and ExecutablePath='%special_AGENT_SETUP_PATH%\\agent\\bin\\gse_agent_daemon.exe'" call terminate 1>nul 2>&1

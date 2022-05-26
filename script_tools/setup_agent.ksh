@@ -368,6 +368,7 @@ stop_agent () {
 remove_agent () {
     log remove_agent - 'trying to stop old agent'
     stop_agent
+    unregister_agent_id
     log remove_agent - "trying to remove old agent diretory(${AGENT_SETUP_PATH})"
     rm -rf "${AGENT_SETUP_PATH}"
 
@@ -379,6 +380,44 @@ remove_agent () {
     fi
 }
 
+register_agent_id () {
+    if [ ! -f "$AGENT_SETUP_PATH/bin/gse_agent" ]; then
+        fail register_agent_id FAILED "gse_agent file not exists in $AGENT_SETUP_PATH/bin"
+    fi
+
+    log register_agent_id  "register agent id: $agent_id"
+    if [ ! -z "$GSE_AGENT_ID" ]; then
+        if return_agent_id=$($AGENT_SETUP_PATH/bin/gse_agent --register "$agent_id") == "$agent_id"; then
+            log report_register_agent_id DONE "$return_agent_id"
+        else
+            fail register_agent_id FAILED "register agent id failed, return_id: $return_agent_id, excepted: $agent_id"
+        fi
+    else
+        if return_agent_id=$($AGENT_SETUP_PATH/bin/gse_agent --register); then
+            log report_register_agent_id DONE "$return_agent_id"
+        else
+            fail register_agent_id FAILED "register agent id failed"
+        fi
+    fi
+}
+
+unregister_agent_id () {
+    if [ -f "$AGENT_SETUP_PATH/bin/gse_agent" ]; then
+        if [ -z "$GSE_AGENT_ID" ]; then
+            if $AGENT_SETUP_PATH/bin/gse_agent --unregister; then
+                log unregister_agent_id SUCCESS "unregister agent id succeed"
+            else
+                fail unregister_agent_id FAILED "unregister agent id failed"
+        else
+            if $AGENT_SETUP_PATH/bin/gse_agent --unregister "${GSE_AGENT_ID}"; then
+                log unregister_agent_id SUCCESS "unregister agent id succeed"
+            else
+                fail unregister_agent_id FAILED "unregister agent id failed"
+        fi
+    else
+        log unregister_agent_id FAILED "gse_agent file not exists in $AGENT_SETUP_PATH/bin"
+    fi
+}
 
 get_config () {
     local filename http_status
@@ -399,6 +438,7 @@ get_config () {
     "filename": "${filename}",
     "node_type": "${NODE_TYPE}",
     "inner_ip": "${LAN_ETH_IP}",
+    "inner_ipv6": "${LAN_ETH_IPV6}",
     "token": "${TOKEN}"
 }
 _OO_
@@ -454,6 +494,8 @@ setup_agent () {
     start_agent
 
     log setup_agent DONE "agent setup succeded"
+
+    register_agent_id
 }
 
 start_basic_gse_plugin () {

@@ -470,6 +470,7 @@ stop_agent () {
 remove_agent () {
     log remove_agent - 'trying to stop old agent'
     stop_agent
+    unregister_agent_id 
 
     log remove_agent - "trying to remove old agent directory(${AGENT_SETUP_PATH})"
     cd "${AGENT_SETUP_PATH}"
@@ -542,6 +543,8 @@ setup_agent () {
     start_agent
 
     log setup_agent DONE "gse agent is setup successfully."
+
+    register_agent_id
 }
 
 start_basic_gse_plugin () {
@@ -786,6 +789,45 @@ backup_for_upgrade () {
     fi
 }
 
+register_agent_id () {
+    if [ ! -f "$AGENT_SETUP_PATH/bin/gse_agent" ]; then
+        fail register_agent_id FAILED "gse_agent file not exists in $AGENT_SETUP_PATH/bin"
+    fi
+
+    log register_agent_id  "register agent id: $agent_id"
+    if [ ! -z "$GSE_AGENT_ID" ]; then
+        if return_agent_id=$($AGENT_SETUP_PATH/bin/gse_agent --register "$agent_id") == "$agent_id"; then
+            log report_register_agent_id DONE "$return_agent_id"
+        else
+            fail register_agent_id FAILED "register agent id failed, return_id: $return_agent_id, excepted: $agent_id"
+        fi
+    else
+        if return_agent_id=$($AGENT_SETUP_PATH/bin/gse_agent --register); then
+            log report_register_agent_id DONE "$return_agent_id"
+        else
+            fail register_agent_id FAILED "register agent id failed"
+        fi
+    fi
+}
+
+unregister_agent_id () {
+    if [ -f "$AGENT_SETUP_PATH/bin/gse_agent" ]; then
+        if [ -z "$GSE_AGENT_ID" ]; then
+            if $AGENT_SETUP_PATH/bin/gse_agent --unregister; then
+                log unregister_agent_id SUCCESS "unregister agent id succeed"
+            else
+                fail unregister_agent_id FAILED "unregister agent id failed"
+        else
+            if $AGENT_SETUP_PATH/bin/gse_agent --unregister "${GSE_AGENT_ID}"; then
+                log unregister_agent_id SUCCESS "unregister agent id succeed"
+            else
+                fail unregister_agent_id FAILED "unregister agent id failed"
+        fi
+    else
+        log unregister_agent_id FAILED "gse_agent file not exists in $AGENT_SETUP_PATH/bin"
+    fi
+}
+
 _help () {
 
     echo "${0%*/} -i CLOUD_ID -l URL -I LAN_IP [OPTIONS]"
@@ -856,7 +898,7 @@ LOG_RPT_CNT=0
 BULK_LOG_SIZE=3
 
 # main program
-while getopts I:i:l:s:uc:r:x:p:e:a:k:N:v:oT:RDO:E:A:V:B:S:Z:K: arg; do
+while getopts I:i:l:s:uc:r:x:p:e:a:k:N:v:oT:RDO:E:A:V:B:S:Z:K:I6:AI: arg; do
     case $arg in
         I) LAN_ETH_IP=$OPTARG ;;
         i) CLOUD_ID=$OPTARG ;;
@@ -884,7 +926,8 @@ while getopts I:i:l:s:uc:r:x:p:e:a:k:N:v:oT:RDO:E:A:V:B:S:Z:K: arg; do
         S) BT_PORT_START=$OPTARG ;;
         Z) BT_PORT_END=$OPTARG ;;
         K) TRACKER_PORT=$OPTARG ;;
-
+        I6) LAN_ETH_IPV6=$OPTARG ;;
+        AI) GSE_AGENT_ID=$OPTARG ;;
         *)  _help ;;
     esac
 done

@@ -413,6 +413,7 @@ stop_agent () {
 remove_agent () {
     log remove_agent - 'trying to stop old agent'
     stop_agent
+    unregister_agent_id
 
     log remove_agent - "trying to remove old agent directory(${AGENT_SETUP_PATH})"
     rm -rf "${AGENT_SETUP_PATH}"
@@ -420,6 +421,34 @@ remove_agent () {
     if [[ "$REMOVE" == "TRUE" ]]; then
         log remove_agent DONE "agent removed"
         exit 0
+    fi
+}
+
+register_agent_id () {
+    if [ ! -f "$AGENT_SETUP_PATH/bin/gse_agent" ]; then
+        fail register_agent_id FAILED "gse_agent file not exists in $AGENT_SETUP_PATH/bin"
+    fi
+
+    if [ ! -z "$GSE_AGENT_ID" ]; then
+        log register_agent_id  "register agent id: $agent_id"
+        return_id=$($AGENT_SETUP_PATH/bin/gse_agent --register "$agent_id")
+        if [ "${return_id}" != "${agent_id}" ]; then
+          fail register_agent_id "register agent id failed, return_id: $return_id, excepted: $agent_id"
+        fi
+    else
+        return_id=$($AGENT_SETUP_PATH/bin/gse_agent --register)
+    fi
+    GSE_AGENT_ID=$return_id
+    log register_agent_id SUCCESS "register agent id succeed"
+}
+
+unregister_agent_id () {
+    if [ -f "$AGENT_SETUP_PATH/bin/gse_agent" ]; then
+        if [ -z "$GSE_AGENT_ID" ]; then
+            $AGENT_SETUP_PATH/bin/gse_agent --unregister
+        else
+            $AGENT_SETUP_PATH/bin/gse_agent --unregister "${GSE_AGENT_ID}"
+        fi
     fi
 }
 
@@ -482,6 +511,8 @@ setup_agent () {
     start_agent
 
     log setup_agent DONE "gse agent is setup successfully."
+
+    register_agent_id
 }
 
 start_basic_gse_plugin () {
