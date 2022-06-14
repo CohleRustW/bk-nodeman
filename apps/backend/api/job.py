@@ -110,6 +110,7 @@ class JobClient(object):
                         {
                             'ip': 127.0.0.1,
                             'bk_cloud_id': 0,
+                            'host_id': 1,
                             'log_content': 'xx',
                             'error_code': 0,
                             'exit_code': 0
@@ -191,7 +192,8 @@ class JobClient(object):
                    {
                        'ip': '127.0.0.1',
                        'bk_supplier_id': 0,
-                       'bk_cloud_id': 0
+                       'bk_cloud_id': 0,
+                       'host_id': 1
                    }
                ]
         :param file_target_path: 目标路径
@@ -234,7 +236,8 @@ class JobClient(object):
                    {
                        'ip': '127.0.0.1',
                        'bk_supplier_id': 0,
-                       'bk_cloud_id': 0
+                       'bk_cloud_id': 0,
+                       'host_id': 1
                    }
                ]
         :param script_content: example: 'ls'
@@ -268,7 +271,8 @@ class JobClient(object):
                    {
                        'ip': '127.0.0.1',
                        'bk_supplier_id': 0,
-                       'bk_cloud_id': 0
+                       'bk_cloud_id': 0,
+                       'host_id': 1
                    }
                ]
         :param file_target_path: example: '/data/'
@@ -282,6 +286,7 @@ class JobClient(object):
                                         {
                                             "bk_cloud_id": 0,
                                             "ip": "127.0.0.1",
+                                            "host_id": 1,
                                             'bk_supplier_id': 0
                                         }
                                     ]
