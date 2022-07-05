@@ -771,6 +771,23 @@ class ScriptLanguageType(EnhanceEnum):
         }
 
 
+class WinInstallTools(EnhanceEnum):
+
+    CURL = "curl.exe"
+    NTRIGHTS = "ntrights.exe"
+    CA_BUNDLE = "curl-ca-bundle.crt"
+    LIBCURL = "libcurl.dll"
+
+    @classmethod
+    def _get_member__alias_map(cls) -> Dict[Enum, str]:
+        return {
+            cls.CURL: _("数据传输工具, 用于下载文件依赖"),
+            cls.NTRIGHTS: _("用户赋权工具"),
+            cls.CA_BUNDLE: "TLS Certificate Verification",
+            cls.LIBCURL: _("libcurl 共享库, 补丁文件"),
+        }
+
+
 class GseOpType(object):
     """
     GSE进程操作类型
@@ -814,6 +831,11 @@ class PolicyRollBackType:
     TRANSFER_TO_ANOTHER = "TRANSFER_TO_ANOTHER"
 
     ROLLBACK_TYPE__ALIAS_MAP = {SUPPRESSED: "已被其他策略管控", LOSE_CONTROL: "脱离策略管控", TRANSFER_TO_ANOTHER: "转移到优先级最高的策略"}
+
+
+class ManualInstallDisplayType:
+    DEPENDENCIES = "dependencies"
+    COMMANDS = "commands"
 
 
 GSE_CLIENT_PACKAGES: List[str] = [
