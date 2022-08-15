@@ -143,7 +143,150 @@ export default class TaskStore extends VuexModule {
   }
   @Action
   public async requestCommands({ jobId, params }: { jobId: number, params: { 'bk_host_id': number } }) {
-    const data = await getJobCommands(jobId, params).catch(() => {});
+    const data = await getJobCommands(jobId, params).catch(() => ({
+      solutions: [
+        {
+          name: 'shell',
+          description: '通过 Unix-like shell 进行安装',
+          steps: [
+            {
+              type: 'commands',
+              contents: [
+                {
+                  name: 'create_tmp_dir_cmd',
+                  text: 'mkdir -p C:/tmp/',
+                  description: '创建临时目录',
+                  show_description: false,
+                },
+                {
+                  name: 'curl.exe',
+                  text: 'curl http://bkrepo.bk-dev.woa.com/generic/bksaas-addons/public-bkapp-bk_nod-3/data/bkee/public/bknodeman/download/curl.exe -o C:/tmp/curl.exe --connect-timeout 5 -sSf',
+                  description: '数据传输工具, 用于下载文件依赖',
+                  show_description: true,
+                },
+                {
+                  name: 'ntrights.exe',
+                  text: 'curl http://bkrepo.bk-dev.woa.com/generic/bksaas-addons/public-bkapp-bk_nod-3/data/bkee/public/bknodeman/download/ntrights.exe -o C:/tmp/ntrights.exe --connect-timeout 5 -sSf',
+                  description: '用户赋权工具',
+                  show_description: true,
+                },
+                {
+                  name: 'curl-ca-bundle.crt',
+                  text: 'curl http://bkrepo.bk-dev.woa.com/generic/bksaas-addons/public-bkapp-bk_nod-3/data/bkee/public/bknodeman/download/curl-ca-bundle.crt -o C:/tmp/curl-ca-bundle.crt --connect-timeout 5 -sSf',
+                  description: 'TLS Certificate Verification',
+                  show_description: true,
+                },
+                {
+                  name: 'libcurl-x64.dll',
+                  text: 'curl http://bkrepo.bk-dev.woa.com/generic/bksaas-addons/public-bkapp-bk_nod-3/data/bkee/public/bknodeman/download/libcurl-x64.dll -o C:/tmp/libcurl-x64.dll --connect-timeout 5 -sSf',
+                  description: 'libcurl 共享库, 补丁文件',
+                  show_description: true,
+                },
+              ],
+              description: '依赖文件下载',
+            },
+            {
+              type: 'commands',
+              contents: [
+                {
+                  name: 'download_cmd',
+                  text: 'C:/tmp/curl.exe http://bkrepo.bk-dev.woa.com/generic/bksaas-addons/public-bkapp-bk_nod-3/data/bkee/public/bknodeman/download/setup_agent.bat -o C:/tmp/setup_agent.bat --connect-timeout 5 -sSf',
+                  description: '下载安装脚本',
+                  show_description: false,
+                },
+                {
+                  name: 'chmod_cmd',
+                  text: 'chmod +x C:/tmp/setup_agent.bat',
+                  description: '为 setup_agent.bat 添加执行权限',
+                  show_description: false,
+                },
+              ],
+              description: '下载安装脚本并赋予执行权限',
+            },
+            {
+              type: 'commands',
+              contents: [
+                {
+                  name: 'run_cmd',
+                  text: 'nohup C:/tmp/setup_agent.bat -O 48533 -E 59173 -A 58625 -V 58930 -B 10020 -S 60020 -Z 60030 -K 10030 -e "9.135.246.142 " -a "9.134.110.184,9.135.227.167,9.135.246.142 " -k "9.135.246.142 " -l http://bkrepo.bk-dev.woa.com/generic/bksaas-addons/public-bkapp-bk_nod-3/data/bkee/public/bknodeman/download -r http://9.134.239.232:30300/backend -i 0 -I 9.134.81.161 -T C:\\\\tmp\\\\ -p c:\\\\gse -c oEoyezRbGRinCqdD5uobEoHNOHkneTDfB0d1pqNb9uXmpkhLuanNEdbE -s xxx -N SERVER &> C:/tmp/nm.nohup.out &',
+                  description: '执行安装脚本',
+                  show_description: false,
+                },
+              ],
+              description: '执行安装脚本',
+            },
+          ],
+          target_host_solutions: [],
+        },
+        {
+          name: 'batch',
+          description: '通过 Windows 批处理脚本 进行安装',
+          steps: [
+            {
+              type: 'commands',
+              contents: [
+                {
+                  name: 'pre_command',
+                  text: 'mkdir C:\\tmp\\',
+                  description: '创建临时目录',
+                  show_description: false,
+                },
+              ],
+              description: '创建临时目录',
+            },
+            {
+              type: 'dependencies',
+              contents: [
+                {
+                  name: 'curl.exe',
+                  text: 'http://bkrepo.bk-dev.woa.com/generic/bksaas-addons/public-bkapp-bk_nod-3/data/bkee/public/bknodeman/download/curl.exe',
+                  description: '数据传输工具, 用于下载文件依赖',
+                  show_description: false,
+                },
+                {
+                  name: 'tcping.exe',
+                  text: 'http://bkrepo.bk-dev.woa.com/generic/bksaas-addons/public-bkapp-bk_nod-3/data/bkee/public/bknodeman/download/ntrights.exe',
+                  description: '用户赋权工具',
+                  show_description: false,
+                },
+                {
+                  name: 'curl-ca-bundle.crt',
+                  text: 'http://bkrepo.bk-dev.woa.com/generic/bksaas-addons/public-bkapp-bk_nod-3/data/bkee/public/bknodeman/download/curl-ca-bundle.crt',
+                  description: 'TLS Certificate Verification',
+                  show_description: false,
+                },
+                {
+                  name: 'libcurl-x64.dll',
+                  text: 'http://bkrepo.bk-dev.woa.com/generic/bksaas-addons/public-bkapp-bk_nod-3/data/bkee/public/bknodeman/download/libcurl-x64.dll',
+                  description: 'libcurl 共享库, 补丁文件',
+                  show_description: false,
+                },
+              ],
+              description: '依赖文件下载',
+            },
+            {
+              type: 'commands',
+              contents: [
+                {
+                  name: 'download_cmd',
+                  text: 'C:\\tmp\\curl.exe http://bkrepo.bk-dev.woa.com/generic/bksaas-addons/public-bkapp-bk_nod-3/data/bkee/public/bknodeman/download/setup_agent.bat -o C:\\tmp\\setup_agent.bat -sSf',
+                  description: '下载安装脚本',
+                  show_description: false,
+                },
+                {
+                  name: 'run_cmd',
+                  text: 'C:\\tmp\\setup_agent.bat -O 48533 -E 59173 -A 58625 -V 58930 -B 10020 -S 60020 -Z 60030 -K 10030 -e "9.135.246.142" -a "9.134.110.184,9.135.227.167,9.135.246.142" -k "9.135.246.142" -l http://bkrepo.bk-dev.woa.com/generic/bksaas-addons/public-bkapp-bk_nod-3/data/bkee/public/bknodeman/download -r http://9.134.239.232:30300/backend -i 0 -I 9.134.81.161 -T C:\\tmp\\ -p c:\\gse -c oEoyezRbGRinCqdD5uobEoHNOHkneTDfB0d1pqNb9uXmpkhLua+ZoO4V1wIY -s xxx -N SERVER',
+                  description: '执行安装脚本',
+                  show_description: false,
+                },
+              ],
+              description: '执行安装命令',
+            },
+          ],
+          target_host_solutions: [],
+        },
+      ],
+    }));
     return transformDataKey(data);
   }
 }
