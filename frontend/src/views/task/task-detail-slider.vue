@@ -52,6 +52,7 @@
                       <bk-link theme="primary" @click="downloadAll3(step.contents)">{{ $t('下载全部3') }}</bk-link>
                       <bk-link theme="primary" @click="downloadAll4(step.contents)">{{ $t('下载全部4') }}</bk-link>
                       <bk-link theme="primary" @click="downloadAll5(step.contents)">{{ $t('下载全部5') }}</bk-link>
+                      <bk-link theme="primary" @click="downloadAll6(step.contents)">{{ $t('下载全部6') }}</bk-link>
                     </template>
                   </P>
                   <p v-for="(file, idx) in step.contents" :key="idx">
