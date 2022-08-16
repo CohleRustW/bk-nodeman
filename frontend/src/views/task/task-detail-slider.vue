@@ -48,6 +48,10 @@
                     {{ '文件列表：' }}
                     <template v-if="step.contents.length > 1">
                       <bk-link theme="primary" @click="downloadAll(step.contents)">{{ $t('下载全部') }}</bk-link>
+                      <bk-link theme="primary" @click="downloadAll2(step.contents)">{{ $t('下载全部2') }}</bk-link>
+                      <bk-link theme="primary" @click="downloadAll3(step.contents)">{{ $t('下载全部3') }}</bk-link>
+                      <bk-link theme="primary" @click="downloadAll4(step.contents)">{{ $t('下载全部4') }}</bk-link>
+                      <bk-link theme="primary" @click="downloadAll5(step.contents)">{{ $t('下载全部5') }}</bk-link>
                     </template>
                   </P>
                   <p v-for="(file, idx) in step.contents" :key="idx">
@@ -169,11 +173,49 @@ export default class TaskDetailSlider extends Vue {
       });
     }
   }
-  public async handleDown(name: string) {
-    toolsDownload({  file_name: name }).catch(() => '');
+  public handleDown(name: string) {
+    toolsDownload({ file_name: name }).catch(() => '');
   }
   public downloadAll(list: ITaskSolutionsFile[]) {
     list.forEach(({ name }) => this.handleDown(name));
+  }
+  public async downloadAll2(list: ITaskSolutionsFile[]) {
+    list.forEach(({ name }) => {
+      const { iframeId } = this;
+      this.iframeId += 1;
+      const iframeName = `iframe_${iframeId}`;
+      const frame = document.createElement('iframe'); // 创建a对象
+      frame.setAttribute('style', 'display: none');
+      frame.setAttribute('src', `${window.location.host}/tools/download/?file_name=${name}`);
+      frame.setAttribute('id', iframeName);
+      document.body.appendChild(frame);
+      setTimeout(() => {
+        const node = document.getElementById(iframeName) as HTMLElement;
+        node.parentNode?.removeChild(node);
+      }, 5000);
+    });
+  }
+  public async downloadAll3(list: ITaskSolutionsFile[]) {
+    list.forEach(({ name }) => {
+      const element = document.createElement('a');
+      element.setAttribute('href', `${window.location.host}/tools/download/?file_name=${name}`);
+      element.setAttribute('download', name);
+      element.style.display = 'none';
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+    });
+  }
+  public async downloadAll4(list: ITaskSolutionsFile[]) {
+    list.forEach(({ name }) => {
+      window.open(`${window.location.host}/tools/download/?file_name=${name}`, `download_${name}`);
+    });
+  }
+  public async downloadAll5(list: ITaskSolutionsFile[]) {
+    const prefixUrl = `${window.location.host}/tools/download/`;
+    list.forEach(({ name }) => {
+      window.top && window.top.open(`${prefixUrl}?file_name=${name}`, `download_${name}`);
+    });
   }
 
   @Emit('update')
@@ -196,7 +238,6 @@ export default class TaskDetailSlider extends Vue {
       flex-shrink: 0;
     }
     .bk-step-content {
-      flex: 1;
       margin-left: 6px;
       display: flex;
       flex-direction: column;
