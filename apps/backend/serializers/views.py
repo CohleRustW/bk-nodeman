@@ -12,6 +12,11 @@ specific language governing permissions and limitations under the License.
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 
+from apps.node_man import constants
+
 
 class PackageDownloadSerializer(serializers.Serializer):
-    file_name = serializers.CharField(help_text=_("下载文件名，只能下载script_tools下的文件"))
+    file_name = serializers.ChoiceField(
+        help_text=_("下载文件名，只能下载script_tools下的文件"),
+        choices=[file_name for file_set in constants.FILES_TO_PUSH_TO_PROXY for file_name in file_set["files"]],
+    )
