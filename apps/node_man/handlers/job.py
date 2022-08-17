@@ -125,7 +125,7 @@ class JobHandler(APIModel):
         if request_bk_host_id not in host_id__pipeline_id_map.keys():
             return {"status": constants.JobStatusType.PENDING}
 
-        commands_solutions: Dict[str, Union[List[str], str]] = NodeApi.fetch_commands(
+        command_solutions: Dict[str, Union[List[str], str]] = NodeApi.fetch_commands(
             {
                 "bk_host_id": host.bk_host_id,
                 "host_install_pipeline_id": host_id__pipeline_id_map[host.bk_host_id],
@@ -134,7 +134,7 @@ class JobHandler(APIModel):
             }
         )
 
-        return commands_solutions
+        return command_solutions
 
     def list(self, params: dict, username: str):
         """
