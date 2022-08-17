@@ -47,16 +47,11 @@
                   <P class="mb10">
                     {{ '文件列表：' }}
                     <template v-if="step.contents.length > 1">
-                      <bk-link theme="primary" @click="downloadAll(step.contents)">{{ $t('下载全部') }}</bk-link>
-                      <bk-link theme="primary" @click="downloadAll2(step.contents)">{{ $t('下载全部2') }}</bk-link>
-                      <bk-link theme="primary" @click="downloadAll3(step.contents)">{{ $t('下载全部3') }}</bk-link>
-                      <bk-link theme="primary" @click="downloadAll4(step.contents)">{{ $t('下载全部4') }}</bk-link>
-                      <bk-link theme="primary" @click="downloadAll5(step.contents)">{{ $t('下载全部5') }}</bk-link>
-                      <bk-link theme="primary" @click="downloadAll6(step.contents)">{{ $t('下载全部6') }}</bk-link>
+                      <bk-link theme="primary" @click="handleDownloadAll(step.contents)">{{ $t('下载全部') }}</bk-link>
                     </template>
                   </P>
                   <p v-for="(file, idx) in step.contents" :key="idx">
-                    <bk-link theme="primary" target="_blank" :href="`tools/download/?file_name=${file.name}`">
+                    <bk-link theme="primary" target="_blank" @click="handleDownload(file.name)">
                       {{ file.name }}
                       <template v-if="file.description"> ({{ file.description }})</template>
                     </bk-link>
@@ -102,7 +97,6 @@ import ExceptionCard from '@/components/exception/exception-card.vue';
 import { copyText } from '@/common/util';
 import { TaskStore } from '@/store';
 import { ITaskHost, ITaskSolutions, ITaskSolutionsFile } from '@/types/task/task';
-import { toolsDownload } from '@/api/modules/tools';
 
 @Component({
   name: 'TaskDetailSlider',
@@ -174,59 +168,18 @@ export default class TaskDetailSlider extends Vue {
       });
     }
   }
-  public handleDown(name: string) {
-    toolsDownload({ file_name: name }).catch(() => '');
+  public handleDownload(name: string) {
+    const element = document.createElement('a');
+    element.setAttribute('href', `tools/download/?file_name=${name}`);
+    element.setAttribute('download', name);
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
   }
-  public downloadAll(list: ITaskSolutionsFile[]) {
-    list.forEach(({ name }) => this.handleDown(name));
-  }
-  public async downloadAll2(list: ITaskSolutionsFile[]) {
+  public handleDownloadAll(list: ITaskSolutionsFile[]) {
     list.forEach(({ name }) => {
-      const { iframeId } = this;
-      this.iframeId += 1;
-      const iframeName = `iframe_${iframeId}`;
-      const frame = document.createElement('iframe'); // 创建a对象
-      frame.setAttribute('style', 'display: none');
-      frame.setAttribute('src', `${window.location.origin}/tools/download/?file_name=${name}`);
-      frame.setAttribute('id', iframeName);
-      document.body.appendChild(frame);
-      setTimeout(() => {
-        const node = document.getElementById(iframeName) as HTMLElement;
-        node.parentNode?.removeChild(node);
-      }, 5000);
-    });
-  }
-  public async downloadAll3(list: ITaskSolutionsFile[]) {
-    list.forEach(({ name }) => {
-      const element = document.createElement('a');
-      element.setAttribute('href', `${window.location.origin}/tools/download/?file_name=${name}`);
-      element.setAttribute('download', name);
-      element.style.display = 'none';
-      document.body.appendChild(element);
-      element.click();
-      document.body.removeChild(element);
-    });
-  }
-  public async downloadAll4(list: ITaskSolutionsFile[]) {
-    list.forEach(({ name }) => {
-      window.open(`${window.location.origin}/tools/download/?file_name=${name}`, `download_${name}`);
-    });
-  }
-  public async downloadAll5(list: ITaskSolutionsFile[]) {
-    const prefixUrl = `${window.location.origin}/tools/download/`;
-    list.forEach(({ name }) => {
-      window.top && window.top.open(`${prefixUrl}?file_name=${name}`, `download_${name}`);
-    });
-  }
-  public async downloadAll6(list: ITaskSolutionsFile[]) {
-    list.forEach(({ name }) => {
-      const element = document.createElement('a');
-      element.setAttribute('href', `tools/download/?file_name=${name}`);
-      element.setAttribute('download', name);
-      element.style.display = 'none';
-      document.body.appendChild(element);
-      element.click();
-      document.body.removeChild(element);
+      this.handleDownload(name);
     });
   }
 
@@ -256,9 +209,8 @@ export default class TaskDetailSlider extends Vue {
       padding-bottom: 24px;
     }
     .bk-step-title {
-      line-height: 24px;
+      line-height: 22px;
       font-size: 16px;
-      color: #000!important;
     }
     .bk-step-body {
       margin-top: 12px;
@@ -321,15 +273,15 @@ export default class TaskDetailSlider extends Vue {
     }
     .command-conatainer {
       position: relative;
-      padding: 12px 28px 16px 20px;
-      border: 1px solid #dcdee5;
+      padding: 12px 28px 26px 20px;
+      /* border: 1px solid #dcdee5; */
       border-radius: 2px;
-      background: #fafbfd;
+      background: #f5f7fa;
       .commands-left {
         width: 100%;
         max-height: 128px;
         min-height: 22px;
-        line-height: 18px;
+        line-height: 20px;
         font-size: 12px;
         color: #979ba5;
         overflow-x: hidden;
@@ -353,14 +305,13 @@ export default class TaskDetailSlider extends Vue {
       }
       .commands-right {
         position: absolute;
-        right: 5px;
-        bottom: 5px;
+        right: 8px;
+        bottom: 8px;
         display: flex;
         flex-direction: column;
         justify-content: flex-end;
-        width: 46px;
-        line-height: 18px;
-        font-size: 17px;
+        /* width: 46px; */
+        font-size: 16px;
         text-align: right;
       }
       .command-icon {
