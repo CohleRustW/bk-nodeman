@@ -53,7 +53,56 @@ export default class TaskStore extends VuexModule {
         }
         row.status = row.status.toLowerCase();
       });
-      return transformDataKey(res);
+      return transformDataKey({
+        job_id: 3606,
+        created_by: 'admin',
+        job_type: 'MAIN_INSTALL_PLUGIN',
+        job_type_display: '\u5b89\u88c5\u63d2\u4ef6',
+        ip_filter_list: [
+          '10.0.1.59',
+        ],
+        total: 0,
+        list: [
+          {
+            filter_host: true,
+            bk_host_id: 5,
+            ip: '10.0.1.59',
+            inner_ip: '10.0.1.59',
+            inner_ipv6: null,
+            bk_cloud_id: 0,
+            bk_cloud_name: '\u76f4\u8fde\u533a\u57df',
+            bk_biz_id: 2,
+            bk_biz_name: '\u84dd\u9cb8',
+            job_id: null,
+            status: 'ignored',
+            suppressed_by_id: 1597,
+            status_display: '\u5f53\u524d\u4e00\u6b21\u6027\u8ba2\u9605\uff08\u4e3b\u673a \u7ea7\uff09\u5df2\u88ab\u4f18\u5148\u7ea7\u66f4\u9ad8\u7684\u7b56\u7565\u3010奇怪的策略(ID: 1597)\u3011\uff08\u4e1a\u52a1 \u7ea7\uff09\u6291\u5236',
+            step: '',
+          },
+        ],
+        statistics: {
+          total_count: 1,
+          failed_count: 0,
+          ignored_count: 1,
+          pending_count: 0,
+          running_count: 0,
+          success_count: 0,
+        },
+        status: 'SUCCESS',
+        end_time: '2022-09-06 12:30:23+0800',
+        start_time: '2022-09-06 12:30:15+0800',
+        cost_time: '8',
+        meta: {
+          type: 'PLUGIN',
+          step_type: 'PLUGIN',
+          op_type: 'INSTALL',
+          op_type_display: '\u5b89\u88c5',
+          step_type_display: '\u63d2\u4ef6',
+          name: '',
+          category: 'once',
+          plugin_name: 'bk-collector',
+        },
+      });
     }
     return canceled ? { canceled: true } : false;
   }
