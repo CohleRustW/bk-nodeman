@@ -213,3 +213,8 @@ class PluginUploadError(NodeManBaseException):
     MESSAGE = _("插件上传失败")
     MESSAGE_TPL = _("插件上传失败: plugin_name -> {plugin_name}, error -> {error}")
     ERROR_CODE = 38
+
+
+class ProxyCommunicationConfigError(NodeManBaseException):
+    MESSAGE = _("Proxy通信字段配置错误")
+    ERROR_CODE = 39
