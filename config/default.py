@@ -672,10 +672,8 @@ GSE_WIN_AGENT_DATA_DIR = os.getenv("BKAPP_GSE_WIN_AGENT_DATA_DIR") or "C:\\gse\\
 GSE_USE_ENCRYPTION = get_type_env(key="BKAPP_GSE_USE_ENCRYPTION", default=False, _type=bool)
 
 GSE_PROCESS_STATUS_DATAID = os.getenv("GSE_PROCESS_STATUS_DATAID") or 1200000
-GSE_PROCESS_EVENT_DATAID = os.getenv("GSE_PROCESS_EVENT_DATAID") or 1100008
 
 # 是否启用 gse svr 服务发现，启用后，默认接入点会通过zk的方式，自动更新gse svr信息
-GSE_ENABLE_SVR_DISCOVERY = get_type_env(key="GSE_ENABLE_SVR_DISCOVERY", default=False, _type=bool)
 
 # 是否使用CMDB订阅机制去主动触发插件下发
 USE_CMDB_SUBSCRIPTION_TRIGGER = get_type_env(key="BKAPP_USE_CMDB_SUBSCRIPTION_TRIGGER", default=True, _type=bool)
