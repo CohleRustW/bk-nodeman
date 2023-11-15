@@ -7,7 +7,7 @@ cat << EOF
 SCRIPT_DIR -> "$SCRIPT_DIR"
 EOF
 
-${SCRIPT_DIR}/prepare_services.sh
+${SCRIPT_DIR}/prepare_services.sh ||  echo "skip prepare_services.sh"
 
 ${SCRIPT_DIR}/install.sh
 
