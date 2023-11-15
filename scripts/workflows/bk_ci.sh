@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 # 当前脚本目录
 SCRIPT_DIR=$(dirname $(readlink -f "$0"))
 
